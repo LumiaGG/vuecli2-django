@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+        a {
+            text-decoration: none
+        }
+
+        a:link {
+            color: #FFFFFF
+        }
+
+        a:visited {
+            color: #FFFFFF
+        }
+
+        a:hover {
+            color: #CDCDCD
+        }
+
+        a:active {
+            color: #3388FF
+        }
+
+        html,
+        body {
+            height: 100%;
+            -webkit-text-size-adjust: none;
+            background: #EFEFF4;
+            overflow: hidden
+        }
+
+        .player {
+            height: 95%
+        }
+    </style>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>FPlayer</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" href="./player/ABPlayer.min.css">
+    <script src="./player/jquery-2.1.4.min.js"></script>
+    <script src="./player/biliplus_shield.min.js"></script>
+    <script src="./player/CommentCoreLibrary.min.js"></script>
+    <script src="./player/ABPlayer.min.js"></script>
+    <script src="./player/ABPlayer_strings.zh.js"></script>
+    <script src="./player/google-style-loading.min.js"></script>
+    
+
+
+</head>
+<!-- init.chkSrc(); -->
+<body onload="loaded()">
+    <div id="player" class="player"></div>
+    <div class="video">
+        <video id="video" preload="auto" data-setup="{}" webkit-playsinline=""></video>
+    </div>
+
+    <br>
+
+</body>
+
+</html>
+
+<script>
+    var fileUrl = "";
+    var global_cid = '';
+    var xmlUrl = '';
+    function init_and_set(url,cid){
+                fileUrl = url;
+                global_cid = cid
+                xmlUrl = "http://127.0.0.1:9000/api/comment?cid="+cid
+                init.chkSrc();
+            }
+    function loaded(){
+            window.parent.get_frame_state();
+            }
+
+    function load_commment(new_cid){
+        // xmlUrl = "./xml/" + new_cid + ".xml";
+        xmlUrl = "http://127.0.0.1:9000/api/comment?cid="+new_cid
+        CommentLoader(xmlUrl, abpinst.cmManager);
+    }
+
+    load_fail = [
+        function () {
+            var div = document.createElement('div');
+            div.innerHTML = '<div style="position:relative;top:50%"><div style="position:relative;font-size:16px;line-height:16px;top:-8px">加载视频失败，无法播放该视频</div></div>';
+            div.setAttribute('style', 'width:100%;height:100%;text-align:center;background:rgba(0,0,0,0.8);position:absolute;color:#FFF');
+            document.querySelector('.ABP-Video').insertBefore(div, document.querySelector('.ABP-Video>:first-child'));
+            document.getElementById('info-box').remove();
+        }
+    ];
+    init = {
+        chkSrc: function () {
+            init.abp();
+            
+            document.querySelector('#video').src = fileUrl;
+            load_commment(global_cid);
+            // var cid = "{{play_msg.get("cid")}}";
+            // var xmlUrl = "./xml/" + cid + ".xml";
+            // CommentLoader(xmlUrl, abpinst.cmManager);
+
+            window.addEventListener('unload', function () {
+                URL.revokeObjectURL(fileUrl);
+                URL.revokeObjectURL(xmlUrl);
+            });
+        },
+        abp: function () {
+            if (window.abpinst) return;
+            var abpOptions = {
+                scale: 1,
+                opacity: 1,
+                speed: 1,
+                useCSS: false,
+                autoOpacity: false
+            }
+            try {
+                var settings = localStorage.html5Settings || '{}';
+                settings = JSON.parse(settings);
+                abpOptions = Object.assign(abpOptions, settings);
+            } catch (e) { }
+            window.abpinst = ABP.create(document.getElementById("player"), {
+                src: {
+                    playlist: [{
+                        video: document.getElementById("video"),
+                        comments: '//comment.bilibili.com/' + window.cid + '.xml'
+                    }]
+                },
+                width: '100%',
+                height: '100%',
+                config: abpOptions
+            });
+            if (location.hash != '') abpinst.title = unescape(location.hash.substr(1));
+            dots.init({
+                id: 'dots',
+                width: '100%',
+                height: '100%',
+                r: 16,
+                thick: 4
+            });
+            dots.runTimer();
+
+            $('.shield-enrty')[0].addEventListener('click', shield.show);
+            $('.shield_top .close')[0].addEventListener('click', shield.show);
+            $('.shield_item .add')[0].addEventListener('click', shield.add);
+
+            abpinst.playerUnit.style.width = '100%';
+            abpinst.playerUnit.style.height = '100%';
+            abpinst.playerUnit.style.position = 'fixed';
+            abpinst.playerUnit.style.top = 0;
+            abpinst.playerUnit.style.left = 0;
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+</script>
